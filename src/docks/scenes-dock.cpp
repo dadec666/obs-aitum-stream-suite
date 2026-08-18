@@ -22,6 +22,7 @@
 extern obs_websocket_vendor vendor;
 extern SourcesDock *sources_dock;
 extern TransitionsDock *transitions_dock;
+extern std::list<CanvasDock *> canvas_docks;
 
 ScenesDock::ScenesDock(QWidget *parent) : QFrame(parent)
 {
@@ -77,7 +78,11 @@ ScenesDock::ScenesDock(QWidget *parent) : QFrame(parent)
 		}
 		if (scene && scene != current) {
 			if (canvasDock) {
-				canvasDock->SwitchScene(QString::fromUtf8(obs_source_get_name(scene)));
+				if (std::find(canvas_docks.begin(), canvas_docks.end(), canvasDock) == canvas_docks.end()) {
+					canvasDock = nullptr;
+				} else {
+					canvasDock->SwitchScene(QString::fromUtf8(obs_source_get_name(scene)));
+				}
 			} else {
 				auto mc = obs_get_main_canvas();
 				if (c == mc) {
@@ -986,13 +991,17 @@ void ScenesDock::FinishedLoading()
 void ScenesDock::UpdateCanvasFromDockList(QList<QDockWidget *> visible_canvas_docks)
 {
 	auto dock_name = visible_canvas_docks.first()->objectName();
-	if (canvasDock){
+	if (canvasDock) {
+		if (std::find(canvas_docks.begin(), canvas_docks.end(), canvasDock) == canvas_docks.end()) {
+			canvasDock = nullptr;
+			return;
+		}
 		if (!visible_canvas_docks.contains(qobject_cast<QDockWidget *>(canvasDock->parentWidget()))) {
 			handleFocusChange(nullptr, visible_canvas_docks.first()->widget());
 		}
 		return;
 	}
-	
+
 	auto main_window = static_cast<QMainWindow *>(obs_frontend_get_main_window());
 	auto main_dock = main_window->findChild<QDockWidget *>(QStringLiteral("AitumStreamSuiteMainCanvas"));
 	if (!main_dock) {
