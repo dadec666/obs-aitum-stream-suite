@@ -3570,8 +3570,9 @@ void CanvasDock::AddSceneItemMenuItems(QMenu *popup, OBSSceneItem sceneItem)
 	popup->addSeparator();
 
 	auto projectorMenu = popup->addMenu(QString::fromUtf8(obs_frontend_get_locale_string("Projector.Open.Source")));
-	AddProjectorMenuMonitors(projectorMenu, parent, "OpenSourceProjector");
-	a = popup->addAction(QString::fromUtf8(obs_frontend_get_locale_string("Projector.Window")));
+	AddProjectorMenuMonitors(projectorMenu, parent, SLOT(OpenSourceProjector()));
+	projectorMenu->addSeparator();
+	a = projectorMenu->addAction(QString::fromUtf8(obs_frontend_get_locale_string("Projector.Window")));
 	connect(a, &QAction::triggered, parent, [parent] { QMetaObject::invokeMethod(parent, "OpenSourceProjector"); });
 	a->setProperty("monitor", -1);
 
@@ -4618,10 +4619,10 @@ bool CanvasDock::HandleMouseReleaseEvent(QMouseEvent *event)
 				previewDisabledWidget->setVisible(preview_disabled);
 			});
 		auto projectorMenu = popup.addMenu(QString::fromUtf8(obs_frontend_get_locale_string("Projector.Open.Preview")));
-		AddProjectorMenuMonitors(projectorMenu, this, "OpenPreviewProjector");
-
-		a = popup.addAction(QString::fromUtf8(obs_frontend_get_locale_string("Projector.Window")),
-				    [this] { OpenProjector(-1); });
+		AddProjectorMenuMonitors(projectorMenu, this, SLOT(OpenPreviewProjector()));
+		projectorMenu->addSeparator();
+		a = projectorMenu->addAction(QString::fromUtf8(obs_frontend_get_locale_string("Projector.Window")),
+					     [this] { OpenProjector(-1); });
 
 		a = popup.addAction(QString::fromUtf8(obs_frontend_get_locale_string("Basic.MainMenu.Edit.LockPreview")), this,
 				    [this] { locked = !locked; });
