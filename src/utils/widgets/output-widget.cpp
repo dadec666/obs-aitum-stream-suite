@@ -61,11 +61,13 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 			[](void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
 				UNUSED_PARAMETER(id);
 				UNUSED_PARAMETER(hotkey);
-				if (!pressed)
+				if (!pressed) {
 					return;
+				}
 				auto this_ = (OutputWidget *)data;
-				if (!this_->output)
+				if (!this_->output) {
 					return;
+				}
 				calldata_t cd = {0};
 				proc_handler_t *ph = obs_output_get_proc_handler(this_->output);
 				proc_handler_call(ph, "split", &cd);
@@ -87,11 +89,13 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 			[](void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
 				UNUSED_PARAMETER(id);
 				UNUSED_PARAMETER(hotkey);
-				if (!pressed)
+				if (!pressed) {
 					return;
+				}
 				auto this_ = (OutputWidget *)data;
-				if (!this_->output)
+				if (!this_->output) {
 					return;
+				}
 				calldata_t cd = {0};
 				proc_handler_t *ph = obs_output_get_proc_handler(this_->output);
 				proc_handler_call(ph, "add_chapter", &cd);
@@ -118,8 +122,9 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 			[](void *data, obs_hotkey_pair_id id, obs_hotkey_t *hotkey, bool pressed) {
 				UNUSED_PARAMETER(id);
 				UNUSED_PARAMETER(hotkey);
-				if (!pressed)
+				if (!pressed) {
 					return false;
+				}
 				auto this_ = (OutputWidget *)data;
 				if (this_->output && !obs_output_paused(this_->output)) {
 					return obs_output_pause(this_->output, true);
@@ -129,8 +134,9 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 			[](void *data, obs_hotkey_pair_id id, obs_hotkey_t *hotkey, bool pressed) {
 				UNUSED_PARAMETER(id);
 				UNUSED_PARAMETER(hotkey);
-				if (!pressed)
+				if (!pressed) {
 					return false;
+				}
 				auto this_ = (OutputWidget *)data;
 				if (this_->output && obs_output_paused(this_->output)) {
 					return obs_output_pause(this_->output, false);
@@ -195,8 +201,9 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 			[](void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
 				UNUSED_PARAMETER(id);
 				UNUSED_PARAMETER(hotkey);
-				if (!pressed)
+				if (!pressed) {
 					return;
+				}
 				auto this_ = (OutputWidget *)data;
 				QMetaObject::invokeMethod(this_->extraButton, "click");
 			},
@@ -227,8 +234,9 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 		if (outputButton->isChecked()) {
 			blog(LOG_INFO, "[Aitum Stream Suite] start %s output clicked '%s'", output_type,
 			     obs_data_get_string(settings, "name"));
-			if (!StartOutput())
+			if (!StartOutput()) {
 				outputButton->setChecked(false);
+			}
 		} else {
 			bool stop = true;
 
@@ -240,8 +248,9 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 						this, QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStop.Title")),
 						QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStop.Text")),
 						QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-					if (button == QMessageBox::No)
+					if (button == QMessageBox::No) {
 						stop = false;
+					}
 				}
 			}
 			if (stop) {
@@ -290,8 +299,9 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 		[](void *data, obs_hotkey_pair_id id, obs_hotkey_t *hotkey, bool pressed) {
 			UNUSED_PARAMETER(id);
 			UNUSED_PARAMETER(hotkey);
-			if (!pressed)
+			if (!pressed) {
 				return false;
+			}
 			auto this_ = (OutputWidget *)data;
 			if (!this_->output || !obs_output_active(this_->output)) {
 				QMetaObject::invokeMethod(this_->outputButton, "click");
@@ -302,8 +312,9 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 		[](void *data, obs_hotkey_pair_id id, obs_hotkey_t *hotkey, bool pressed) {
 			UNUSED_PARAMETER(id);
 			UNUSED_PARAMETER(hotkey);
-			if (!pressed)
+			if (!pressed) {
 				return false;
+			}
 			auto this_ = (OutputWidget *)data;
 			if (this_->output && obs_output_active(this_->output)) {
 				QMetaObject::invokeMethod(this_->outputButton, "click");
@@ -327,16 +338,21 @@ OutputWidget::OutputWidget(obs_data_t *output_data, QWidget *parent) : QFrame(pa
 
 OutputWidget::~OutputWidget()
 {
-	if (StartStopHotkey != OBS_INVALID_HOTKEY_PAIR_ID)
+	if (StartStopHotkey != OBS_INVALID_HOTKEY_PAIR_ID) {
 		obs_hotkey_pair_unregister(StartStopHotkey);
-	if (PauseHotkey != OBS_INVALID_HOTKEY_PAIR_ID)
+	}
+	if (PauseHotkey != OBS_INVALID_HOTKEY_PAIR_ID) {
 		obs_hotkey_pair_unregister(PauseHotkey);
-	if (extraHotkey != OBS_INVALID_HOTKEY_ID)
+	}
+	if (extraHotkey != OBS_INVALID_HOTKEY_ID) {
 		obs_hotkey_unregister(extraHotkey);
-	if (splitHotkey != OBS_INVALID_HOTKEY_ID)
+	}
+	if (splitHotkey != OBS_INVALID_HOTKEY_ID) {
 		obs_hotkey_unregister(splitHotkey);
-	if (chapterHotkey != OBS_INVALID_HOTKEY_ID)
+	}
+	if (chapterHotkey != OBS_INVALID_HOTKEY_ID) {
 		obs_hotkey_unregister(chapterHotkey);
+	}
 	if (output) {
 		signal_handler_t *signal = obs_output_get_signal_handler(output);
 		signal_handler_disconnect(signal, "start", output_start, this);
@@ -358,8 +374,9 @@ void OutputWidget::output_start(void *data, calldata_t *calldata)
 		this_->onStarted();
 		this_->onStarted = nullptr;
 	}
-	if (this_->outputButton->isChecked())
+	if (this_->outputButton->isChecked()) {
 		return;
+	}
 	QMetaObject::invokeMethod(this_->outputButton, [this_] { this_->outputButton->setChecked(true); }, Qt::QueuedConnection);
 }
 
@@ -370,14 +387,16 @@ void OutputWidget::replay_saved(void *data, calldata_t *calldata)
 	QMetaObject::invokeMethod(this_->extraButton, [this_] {
 		this_->startTime = QDateTime::currentDateTime();
 		proc_handler_t *ph = obs_output_get_proc_handler(this_->output);
-		if (!ph)
+		if (!ph) {
 			return;
+		}
 		QString path;
 		calldata_t cd = {0};
 		if (proc_handler_call(ph, "get_last_replay", &cd)) {
 			const char *p = calldata_string(&cd, "path");
-			if (p)
+			if (p) {
 				path = QString::fromUtf8(p);
+			}
 		}
 		calldata_free(&cd);
 		if (!path.isEmpty()) {
@@ -398,11 +417,12 @@ void OutputWidget::output_stop(void *data, calldata_t *calldata)
 	auto this_ = (OutputWidget *)data;
 	if (this_->onStarted) {
 		const char *last_error = (const char *)calldata_ptr(calldata, "last_error");
-		if (last_error)
+		if (last_error) {
 			blog(LOG_WARNING, "[Aitum Stream Suite] failed to start '%s': %s", this_->objectName().toUtf8().constData(),
 			     last_error);
-		else
+		} else {
 			blog(LOG_WARNING, "[Aitum Stream Suite] failed to start '%s'", this_->objectName().toUtf8().constData());
+		}
 
 		this_->onStarted();
 		this_->onStarted = nullptr;
@@ -415,8 +435,9 @@ void OutputWidget::output_stop(void *data, calldata_t *calldata)
 	if (this_->output) {
 		const char *error = (const char *)calldata_ptr(calldata, "last_error");
 		std::string last_error;
-		if (error)
+		if (error) {
 			last_error = error;
+		}
 		auto code = calldata_int(calldata, "code");
 		QMetaObject::invokeMethod(
 			this_->outputButton,
@@ -429,8 +450,9 @@ void OutputWidget::output_stop(void *data, calldata_t *calldata)
 				if (vendor) {
 					const auto d = obs_data_create();
 					obs_data_set_string(d, "output", obs_output_get_name(this_->output));
-					if (!last_error.empty())
+					if (!last_error.empty()) {
 						obs_data_set_string(d, "last_error", last_error.c_str());
+					}
 					obs_data_set_int(d, "code", code);
 
 					obs_websocket_vendor_emit_event(vendor, "stop_output", d);
@@ -443,8 +465,9 @@ void OutputWidget::output_stop(void *data, calldata_t *calldata)
 
 bool OutputWidget::StartOutput(bool automated)
 {
-	if (!settings)
+	if (!settings) {
 		return false;
+	}
 
 	auto output_type = obs_data_get_string(settings, "type");
 	if (!automated && (output_type[0] == '\0' || strcmp(output_type, "stream") == 0)) {
@@ -456,8 +479,9 @@ bool OutputWidget::StartOutput(bool automated)
 							    QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStart.Title")),
 							    QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStart.Text")),
 							    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
 				return false;
+			}
 		}
 	}
 
@@ -483,8 +507,9 @@ bool OutputWidget::StartOutput(bool automated)
 		const char *canvas_name = obs_data_get_string(settings, "canvas");
 		auto canvas = (!canvas_name || canvas_name[0] == '\0') ? obs_get_main_canvas()
 								       : obs_get_canvas_by_name(canvas_name);
-		if (!canvas)
+		if (!canvas) {
 			return false;
+		}
 
 		signal_handler_t *signal = obs_output_get_signal_handler(vco);
 		signal_handler_disconnect(signal, "start", output_start, this);
@@ -512,8 +537,9 @@ bool OutputWidget::StartOutput(bool automated)
 		const char *canvas_name = obs_data_get_string(settings, "canvas");
 		auto canvas = (!canvas_name || canvas_name[0] == '\0') ? obs_get_main_canvas()
 								       : obs_get_canvas_by_name(canvas_name);
-		if (!canvas)
+		if (!canvas) {
 			return false;
+		}
 
 		std::string output_name = "Aitum Stream Suite Output ";
 		output_name += name;
@@ -532,16 +558,18 @@ bool OutputWidget::StartOutput(bool automated)
 
 			const char *audioName = config_get_string(obs_frontend_get_profile_config(), "AdvOut", cfg_name.c_str());
 			OBSDataAutoRelease item = obs_data_create();
-			if (audioName && audioName[0] != '\0')
+			if (audioName && audioName[0] != '\0') {
 				obs_data_set_string(item, "name", audioName);
+			}
 			obs_data_array_push_back(audio_names, item);
 		}
 		obs_data_set_array(s, "audio_names", audio_names);
 		if (obs_data_get_bool(settings, "save_file")) {
 			std::string path = obs_data_get_string(settings, "directory");
 			char lastChar = path.empty() ? '\0' : path.back();
-			if (lastChar != '/' && lastChar != '\\')
+			if (lastChar != '/' && lastChar != '\\') {
 				path += "/";
+			}
 			auto extension = obs_data_get_string(settings, "extension");
 			bool spaces = obs_data_get_bool(settings, "allow_spaces");
 			auto format = obs_data_get_string(settings, "format");
@@ -620,16 +648,19 @@ bool OutputWidget::StartOutput(bool automated)
 	auto video_encoders_count = obs_data_array_count(video_encoders);
 	if (video_encoders_count == 0) {
 		auto venc = GetVideoEncoder(settings, advanced, is_record, name, automated);
-		if (venc)
+		if (venc) {
 			vencs.push_back(venc);
+		}
 	} else {
 		for (size_t i = 0; i < video_encoders_count; i++) {
 			auto item = obs_data_array_item(video_encoders, i);
-			if (!item)
+			if (!item) {
 				continue;
+			}
 			auto venc = GetVideoEncoder(item, advanced, is_record, name, automated);
-			if (venc)
+			if (venc) {
 				vencs.push_back(venc);
+			}
 			obs_data_release(item);
 		}
 	}
@@ -646,23 +677,26 @@ bool OutputWidget::StartOutput(bool automated)
 					obs_output_release(main_output);
 					main_output = nullptr;
 				}
-				if (!main_output)
+				if (!main_output) {
 					main_output = obs_frontend_get_recording_output();
+				}
 				if (main_output && !obs_output_active(main_output)) {
 					obs_output_release(main_output);
 					main_output = nullptr;
 				}
 			}
-			if (!main_output)
+			if (!main_output) {
 				main_output = obs_frontend_get_streaming_output();
+			}
 
 			if (!obs_output_active(main_output)) {
 				obs_output_release(main_output);
 				blog(LOG_WARNING, "[Aitum Stream Suite] failed to start output '%s' because main was not started",
 				     name);
-				if (!automated)
+				if (!automated) {
 					QMessageBox::warning(this, QString::fromUtf8(obs_module_text("MainOutputNotActive")),
 							     QString::fromUtf8(obs_module_text("MainOutputNotActive")));
+				}
 				return false;
 			}
 			auto aenc = obs_output_get_audio_encoder(main_output, 0);
@@ -670,10 +704,11 @@ bool OutputWidget::StartOutput(bool automated)
 			if (!aenc) {
 				blog(LOG_WARNING,
 				     "[Aitum Stream Suite] failed to start output '%s' because audio encoder was not found", name);
-				if (!automated)
+				if (!automated) {
 					QMessageBox::warning(this,
 							     QString::fromUtf8(obs_module_text("MainOutputEncoderIndexNotFound")),
 							     QString::fromUtf8(obs_module_text("MainOutputEncoderIndexNotFound")));
+				}
 				return false;
 			} else {
 				obs_encoder_get_ref(aenc);
@@ -684,12 +719,14 @@ bool OutputWidget::StartOutput(bool automated)
 			if (is_record || streamServer.startsWith("srt://", Qt::CaseInsensitive) ||
 			    streamServer.startsWith("rist://", Qt::CaseInsensitive)) {
 				auto tracks = obs_data_get_int(settings, "audio_tracks");
-				if (!tracks)
+				if (!tracks) {
 					tracks = 1;
+				}
 
 				for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
-					if ((tracks & (1ll << i)) == 0)
+					if ((tracks & (1ll << i)) == 0) {
 						continue;
+					}
 					obs_data_t *s = nullptr;
 					auto aes = obs_data_get_obj(settings, "audio_encoder_settings");
 					if (aes) {
@@ -754,14 +791,16 @@ bool OutputWidget::StartOutput(bool automated)
 					obs_output_release(main_output);
 					main_output = nullptr;
 				}
-				if (!main_output)
+				if (!main_output) {
 					main_output = obs_frontend_get_recording_output();
+				}
 				if (main_output && !obs_output_active(main_output)) {
 					obs_output_release(main_output);
 					main_output = nullptr;
 				}
-				if (!main_output)
+				if (!main_output) {
 					main_output = obs_frontend_get_streaming_output();
+				}
 
 				for (size_t idx = 0; idx < MAX_OUTPUT_AUDIO_ENCODERS; idx++) {
 					auto aenc = main_output ? obs_output_get_audio_encoder(main_output, idx) : nullptr;
@@ -805,9 +844,10 @@ bool OutputWidget::StartOutput(bool automated)
 
 	if (vencs.empty()) {
 		blog(LOG_WARNING, "[Aitum Stream Suite] Failed to start '%s', no video encoder found", name);
-		if (!automated)
+		if (!automated) {
 			QMessageBox::warning(this, QString::fromUtf8(obs_module_text("NoVideoEncoder")),
 					     QString::fromUtf8(obs_module_text("NoVideoEncoder")));
+		}
 		for (size_t i = 0; i < aencs.size(); i++) {
 			obs_encoder_release(aencs[i]);
 		}
@@ -815,9 +855,10 @@ bool OutputWidget::StartOutput(bool automated)
 	}
 	if (aencs.empty()) {
 		blog(LOG_WARNING, "[Aitum Stream Suite] Failed to start '%s', no audio encoder found", name);
-		if (!automated)
+		if (!automated) {
 			QMessageBox::warning(this, QString::fromUtf8(obs_module_text("NoAudioEncoder")),
 					     QString::fromUtf8(obs_module_text("NoAudioEncoder")));
+		}
 		for (size_t i = 0; i < vencs.size(); i++) {
 			obs_encoder_release(vencs[i]);
 		}
@@ -840,17 +881,19 @@ bool OutputWidget::StartOutput(bool automated)
 			filenameFormat += safeName.toStdString();
 		}
 		auto format = obs_data_get_string(settings, "format");
-		if (format[0] == '\0')
+		if (format[0] == '\0') {
 			format = "hybrid_mp4";
+		}
 		std::string ext = format;
-		if (ext == "fragmented_mp4" || ext == "hybrid_mp4")
+		if (ext == "fragmented_mp4" || ext == "hybrid_mp4") {
 			ext = "mp4";
-		else if (ext == "fragmented_mov" || ext == "hybrid_mov")
+		} else if (ext == "fragmented_mov" || ext == "hybrid_mov") {
 			ext = "mov";
-		else if (ext == "hls")
+		} else if (ext == "hls") {
 			ext = "m3u8";
-		else if (ext == "mpegts")
+		} else if (ext == "mpegts") {
 			ext = "ts";
+		}
 
 		char *filename = os_generate_formatted_filename(ext.c_str(), true, filenameFormat.c_str());
 
@@ -867,14 +910,15 @@ bool OutputWidget::StartOutput(bool automated)
 		std::string output_name = "Aitum Stream Suite Output ";
 		output_name += name;
 		const char *output_id = "ffmpeg_muxer";
-		if (strcmp(output_type, "backtrack") == 0)
+		if (strcmp(output_type, "backtrack") == 0) {
 			output_id = "replay_buffer";
-		else if (strcmp(format, "hybrid_mp4") == 0)
+		} else if (strcmp(format, "hybrid_mp4") == 0) {
 			output_id = "mp4_output";
-		else if (strcmp(format, "hybrid_mov") == 0)
+		} else if (strcmp(format, "hybrid_mov") == 0) {
 			output_id = "mov_output";
-		else if (strcmp(format, "flv") == 0)
+		} else if (strcmp(format, "flv") == 0) {
 			output_id = "flv_output";
+		}
 
 		output = obs_output_create(output_id, output_name.c_str(), nullptr, nullptr);
 
@@ -895,8 +939,9 @@ bool OutputWidget::StartOutput(bool automated)
 		auto server = obs_data_get_string(settings, "stream_server");
 		if (!server || !strlen(server)) {
 			server = obs_data_get_string(settings, "server");
-			if (server && strlen(server))
+			if (server && strlen(server)) {
 				obs_data_set_string(settings, "stream_server", server);
+			}
 		}
 		bool whip = strstr(server, "whip") != nullptr;
 		auto s = obs_data_create();
@@ -904,8 +949,9 @@ bool OutputWidget::StartOutput(bool automated)
 		auto key = obs_data_get_string(settings, "stream_key");
 		if (!key || !strlen(key)) {
 			key = obs_data_get_string(settings, "key");
-			if (key && strlen(key))
+			if (key && strlen(key)) {
 				obs_data_set_string(settings, "stream_key", key);
+			}
 		}
 		if (whip) {
 			obs_data_set_string(s, "bearer_token", key);
@@ -962,12 +1008,14 @@ bool OutputWidget::StartOutput(bool automated)
 	signal_handler_t *signal = obs_output_get_signal_handler(output);
 	signal_handler_disconnect(signal, "start", output_start, this);
 	signal_handler_disconnect(signal, "stop", output_stop, this);
-	if (extraButton)
+	if (extraButton) {
 		signal_handler_disconnect(signal, "saved", replay_saved, this);
+	}
 	signal_handler_connect(signal, "start", output_start, this);
 	signal_handler_connect(signal, "stop", output_stop, this);
-	if (extraButton)
+	if (extraButton) {
 		signal_handler_connect(signal, "saved", replay_saved, this);
+	}
 
 	for (size_t i = 0; i < vencs.size(); i++) {
 		obs_output_set_video_encoder2(output, vencs[i], i);
@@ -1000,9 +1048,10 @@ obs_encoder_t *OutputWidget::GetVideoEncoder(obs_data_t *settings, bool advanced
 	auto canvas = (!canvas_name || canvas_name[0] == '\0') ? obs_get_main_canvas() : obs_get_canvas_by_name(canvas_name);
 	if (!canvas) {
 		blog(LOG_WARNING, "[Aitum Stream Suite] canvas '%s' not found", canvas_name);
-		if (!automated)
+		if (!automated) {
 			QMessageBox::warning(this, QString::fromUtf8(obs_module_text("CanvasNotFound")),
 					     QString::fromUtf8(obs_module_text("CanvasNotFound")));
+		}
 		return nullptr;
 	}
 	auto main_canvas = obs_get_main_canvas();
@@ -1019,15 +1068,20 @@ obs_encoder_t *OutputWidget::GetVideoEncoder(obs_data_t *settings, bool advanced
 			other_output_name += output_video_encoder_name;
 			auto other_output = obs_get_output_by_name(other_output_name.c_str());
 			if (other_output) {
-				venc = obs_output_get_video_encoder(other_output);
+				auto vei = (int)obs_data_get_int(settings, "video_encoder_index");
+				venc = obs_output_get_video_encoder2(other_output, vei);
+				if (!venc) {
+					venc = obs_output_get_video_encoder(other_output);
+				}
 				obs_output_release(other_output);
 			}
 			if (!venc) {
 				blog(LOG_WARNING, "[Aitum Stream Suite] failed to start output '%s' because '%s' was not started",
 				     output_name, output_video_encoder_name);
-				if (!automated)
+				if (!automated) {
 					QMessageBox::warning(this, QString::fromUtf8(obs_module_text("OtherOutputNotActive")),
 							     QString::fromUtf8(obs_module_text("OtherOutputNotActive")));
+				}
 				return nullptr;
 			} else {
 				obs_encoder_get_ref(venc);
@@ -1044,25 +1098,28 @@ obs_encoder_t *OutputWidget::GetVideoEncoder(obs_data_t *settings, bool advanced
 							obs_output_release(main_output);
 							main_output = nullptr;
 						}
-						if (!main_output)
+						if (!main_output) {
 							main_output = obs_frontend_get_recording_output();
+						}
 						if (main_output && !obs_output_active(main_output)) {
 							obs_output_release(main_output);
 							main_output = nullptr;
 						}
 					}
-					if (!main_output)
+					if (!main_output) {
 						main_output = obs_frontend_get_streaming_output();
+					}
 
 					if (!obs_output_active(main_output)) {
 						obs_output_release(main_output);
 						blog(LOG_WARNING,
 						     "[Aitum Stream Suite] failed to start output '%s' because main was not started",
 						     output_name);
-						if (!automated)
+						if (!automated) {
 							QMessageBox::warning(
 								this, QString::fromUtf8(obs_module_text("MainOutputNotActive")),
 								QString::fromUtf8(obs_module_text("MainOutputNotActive")));
+						}
 						return nullptr;
 					}
 					auto vei = (int)obs_data_get_int(settings, "video_encoder_index");
@@ -1072,12 +1129,13 @@ obs_encoder_t *OutputWidget::GetVideoEncoder(obs_data_t *settings, bool advanced
 						blog(LOG_WARNING,
 						     "[Aitum Stream Suite] failed to start output '%s' because encoder index %d was not found",
 						     output_name, vei);
-						if (!automated)
+						if (!automated) {
 							QMessageBox::warning(this,
 									     QString::fromUtf8(obs_module_text(
 										     "MainOutputEncoderIndexNotFound")),
 									     QString::fromUtf8(obs_module_text(
 										     "MainOutputEncoderIndexNotFound")));
+						}
 						return nullptr;
 					} else {
 						obs_encoder_get_ref(venc);
@@ -1090,8 +1148,9 @@ obs_encoder_t *OutputWidget::GetVideoEncoder(obs_data_t *settings, bool advanced
 							uint32_t has_flags = OBS_OUTPUT_VIDEO |
 									     OBS_OUTPUT_ENCODED; //| OBS_OUTPUT_SERVICE;
 							uint32_t flags = obs_output_get_flags(output);
-							if ((flags & has_flags) != has_flags)
+							if ((flags & has_flags) != has_flags) {
 								return true;
+							}
 
 							std::pair<obs_encoder_t **, video_t *> *d =
 								(std::pair<obs_encoder_t **, video_t *> *)param;
@@ -1148,8 +1207,9 @@ obs_encoder_t *OutputWidget::GetVideoEncoder(obs_data_t *settings, bool advanced
 				obs_data_release(s);
 				obs_encoder_set_video(venc, obs_canvas_get_video(canvas));
 				auto divisor = obs_data_get_int(settings, "frame_rate_divisor");
-				if (divisor > 1)
+				if (divisor > 1) {
 					obs_encoder_set_frame_rate_divisor(venc, (uint32_t)divisor);
+				}
 
 				bool scale = obs_data_get_bool(settings, "scale");
 				if (scale) {
@@ -1175,8 +1235,9 @@ obs_encoder_t *OutputWidget::GetVideoEncoder(obs_data_t *settings, bool advanced
 			[](void *param, obs_output_t *output) {
 				uint32_t has_flags = OBS_OUTPUT_VIDEO | OBS_OUTPUT_ENCODED; //| OBS_OUTPUT_SERVICE;
 				uint32_t flags = obs_output_get_flags(output);
-				if ((flags & has_flags) != has_flags)
+				if ((flags & has_flags) != has_flags) {
 					return true;
+				}
 
 				std::pair<obs_encoder_t **, video_t *> *d = (std::pair<obs_encoder_t **, video_t *> *)param;
 
@@ -1199,23 +1260,26 @@ obs_encoder_t *OutputWidget::GetVideoEncoder(obs_data_t *settings, bool advanced
 					obs_output_release(main_output);
 					main_output = nullptr;
 				}
-				if (!main_output)
+				if (!main_output) {
 					main_output = obs_frontend_get_recording_output();
+				}
 				if (main_output && !obs_output_active(main_output)) {
 					obs_output_release(main_output);
 					main_output = nullptr;
 				}
 			}
-			if (!main_output)
+			if (!main_output) {
 				main_output = obs_frontend_get_streaming_output();
+			}
 			venc = main_output ? obs_output_get_video_encoder(main_output) : nullptr;
 			obs_output_release(main_output);
 			if (!venc || !obs_output_active(main_output)) {
 				blog(LOG_WARNING, "[Aitum Stream Suite] failed to start output '%s' because main was not started",
 				     output_name);
-				if (!automated)
+				if (!automated) {
 					QMessageBox::warning(this, QString::fromUtf8(obs_module_text("MainOutputNotActive")),
 							     QString::fromUtf8(obs_module_text("MainOutputNotActive")));
+				}
 				return nullptr;
 			}
 			obs_encoder_get_ref(venc);
@@ -1251,9 +1315,11 @@ bool OutputWidget::EncoderAvailable(const char *encoder)
 	const char *val;
 	int i = 0;
 
-	while (obs_enum_encoder_types(i++, &val))
-		if (strcmp(val, encoder) == 0)
+	while (obs_enum_encoder_types(i++, &val)) {
+		if (strcmp(val, encoder) == 0) {
 			return true;
+		}
+	}
 
 	return false;
 }
@@ -1261,18 +1327,20 @@ bool OutputWidget::EncoderAvailable(const char *encoder)
 void OutputWidget::CheckActive()
 {
 	bool active = obs_output_active(output);
-	if (outputButton->isChecked() != active)
+	if (outputButton->isChecked() != active) {
 		outputButton->setChecked(active);
+	}
 	if (activeTimer.isActive() != active) {
 		if (active) {
 			startTime = QDateTime::currentDateTime();
 			activeTimer.start(500);
 		} else {
 			activeTimer.stop();
-			if (extraButton)
+			if (extraButton) {
 				extraButton->setText("");
-			else
+			} else {
 				outputButton->setText("");
+			}
 		}
 	}
 }
@@ -1330,8 +1398,9 @@ void OutputWidget::UpdateCanvas()
 	QSet<QString> canvases;
 	for (size_t i = 0; i < count; i++) {
 		auto item = obs_data_array_item(video_encoders, i);
-		if (!item)
+		if (!item) {
 			continue;
+		}
 		auto cn = obs_data_get_string(item, "canvas");
 		canvases.insert(QString::fromUtf8(cn[0] == '\0' ? obs_module_text("MainCanvas") : cn));
 		obs_data_release(item);
@@ -1345,8 +1414,9 @@ void OutputWidget::UpdateCanvas()
 	count = obs_data_array_count(canvas);
 	for (size_t i = 0; i < count; i++) {
 		auto item = obs_data_array_item(canvas, i);
-		if (!item)
+		if (!item) {
 			continue;
+		}
 		auto cn = obs_data_get_string(item, "name");
 		if (cn[0] != '\0' && strcmp(cn, canvas_name) == 0) {
 			auto c = color_from_int(obs_data_get_int(item, "color"));
@@ -1363,8 +1433,9 @@ void OutputWidget::ensure_directory(char *path)
 {
 #ifdef _WIN32
 	char *backslash = strrchr(path, '\\');
-	if (backslash)
+	if (backslash) {
 		*backslash = '/';
+	}
 #endif
 
 	char *slash = strrchr(path, '/');
@@ -1375,15 +1446,17 @@ void OutputWidget::ensure_directory(char *path)
 	}
 
 #ifdef _WIN32
-	if (backslash)
+	if (backslash) {
 		*backslash = '\\';
+	}
 #endif
 }
 
 bool OutputWidget::AddChapter(const char *chapter_name)
 {
-	if (!output)
+	if (!output) {
 		return false;
+	}
 	proc_handler_t *ph = obs_output_get_proc_handler(output);
 	calldata cd;
 	calldata_init(&cd);
@@ -1402,15 +1475,17 @@ bool OutputWidget::StartOutput(std::function<void()> onStarted)
 	auto name = this->objectName();
 	this->onStarted = onStarted;
 	auto starting = StartOutput(true);
-	if (!starting)
+	if (!starting) {
 		this->onStarted = nullptr;
+	}
 	return starting;
 }
 
 void OutputWidget::StopOutput()
 {
-	if (!output || !obs_output_active(output))
+	if (!output || !obs_output_active(output)) {
 		return;
+	}
 
 	if (obs_output_get_active_delay(output) > 0) {
 		obs_output_stop(output);
@@ -1440,8 +1515,9 @@ bool OutputWidget::IsRecord() const
 const char *OutputWidget::GetOutputType() const
 {
 	const auto output_type = obs_data_get_string(settings, "type");
-	if (output_type[0] == '\0')
+	if (output_type[0] == '\0') {
 		return "stream";
-	else
+	} else {
 		return output_type;
+	}
 }
