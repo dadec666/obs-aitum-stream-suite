@@ -3554,7 +3554,7 @@ void CanvasDock::AddSceneItemMenuItems(QMenu *popup, OBSSceneItem sceneItem)
 				obs_sceneitem_set_blending_mode(sceneItem, (enum obs_blending_type)i);
 				std::string redo_json = backup_scene(scene);
 				auto undoName =
-					QString::fromUtf8(obs_frontend_get_locale_string("Undo.BlendingMethod"))
+					QString::fromUtf8(obs_frontend_get_locale_string("Undo.BlendingMode"))
 						.arg(QString::fromUtf8(obs_source_get_name(obs_sceneitem_get_source(sceneItem))));
 				obs_frontend_add_undo_redo_action(undoName.toUtf8().constData(), undo_redo_scene, undo_redo_scene,
 								  undo_json.c_str(), redo_json.c_str(), false);
@@ -3562,6 +3562,47 @@ void CanvasDock::AddSceneItemMenuItems(QMenu *popup, OBSSceneItem sceneItem)
 		a->setCheckable(true);
 		a->setChecked(blendingMode == i);
 	}
+
+	auto blendingMethod = obs_sceneitem_get_blending_method(sceneItem);
+	blendingMenu = popup->addMenu(QString::fromUtf8(obs_frontend_get_locale_string("BlendingMethod")));
+
+	a = blendingMenu->addAction(QString::fromUtf8(obs_frontend_get_locale_string("BlendingMethod.Default")), [sceneItem]() {
+		if (!sceneItem) {
+			return;
+		}
+		auto scene = obs_sceneitem_get_scene(sceneItem);
+		if (!scene) {
+			return;
+		}
+		std::string undo_json = backup_scene(scene);
+		obs_sceneitem_set_blending_method(sceneItem, OBS_BLEND_METHOD_DEFAULT);
+		std::string redo_json = backup_scene(scene);
+		auto undoName = QString::fromUtf8(obs_frontend_get_locale_string("Undo.BlendingMethod"))
+					.arg(QString::fromUtf8(obs_source_get_name(obs_sceneitem_get_source(sceneItem))));
+		obs_frontend_add_undo_redo_action(undoName.toUtf8().constData(), undo_redo_scene, undo_redo_scene,
+						  undo_json.c_str(), redo_json.c_str(), false);
+	});
+	a->setCheckable(true);
+	a->setChecked(blendingMethod == OBS_BLEND_METHOD_DEFAULT);
+
+	a = blendingMenu->addAction(QString::fromUtf8(obs_frontend_get_locale_string("BlendingMethod.SrgbOff")), [sceneItem]() {
+		if (!sceneItem) {
+			return;
+		}
+		auto scene = obs_sceneitem_get_scene(sceneItem);
+		if (!scene) {
+			return;
+		}
+		std::string undo_json = backup_scene(scene);
+		obs_sceneitem_set_blending_method(sceneItem, OBS_BLEND_METHOD_SRGB_OFF);
+		std::string redo_json = backup_scene(scene);
+		auto undoName = QString::fromUtf8(obs_frontend_get_locale_string("Undo.BlendingMethod"))
+					.arg(QString::fromUtf8(obs_source_get_name(obs_sceneitem_get_source(sceneItem))));
+		obs_frontend_add_undo_redo_action(undoName.toUtf8().constData(), undo_redo_scene, undo_redo_scene,
+						  undo_json.c_str(), redo_json.c_str(), false);
+	});
+	a->setCheckable(true);
+	a->setChecked(blendingMethod == OBS_BLEND_METHOD_SRGB_OFF);
 
 	popup->addSeparator();
 	popup->addMenu(CreateVisibilityTransitionMenu(true, sceneItem));
