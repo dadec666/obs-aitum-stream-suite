@@ -10,6 +10,7 @@
 #include <obs-module.h>
 #include <QComboBox>
 #include <QDockWidget>
+#include <QFileInfo>
 #include <QGroupBox>
 #include <QGuiApplication>
 #include <QListView>
@@ -17,11 +18,14 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QPushButton>
 #include <QScreen>
+#include <QSettings>
 #include <QSpinBox>
 #include <QSplitter>
 #include <QToolBar>
+#include <QUrlQuery>
 #include <QWidgetAction>
 #include <src/utils/obs-websocket-api.h>
 #include <util/dstr.h>
@@ -232,6 +236,7 @@ std::string CanvasDock::backup_scene(obs_scene_t *scene)
 
 void CanvasDock::LoadUI()
 {
+	setAcceptDrops(true);
 	obs_enter_graphics();
 
 	gs_render_start(true);
@@ -6583,4 +6588,297 @@ void CanvasDock::RemoveTransition(const char *transition_name)
 			transition->removeItem(pos);
 		}
 	});
+}
+
+void CanvasDock::dragEnterEvent(QDragEnterEvent *event)
+{
+	if (event->mimeData()->hasFormat("application/x-obs-source-uuid")) {
+		event->acceptProposedAction();
+	}
+
+	// refuse drops of our own widgets
+	if (event->source() != nullptr) {
+		event->setDropAction(Qt::IgnoreAction);
+		return;
+	}
+
+	event->acceptProposedAction();
+}
+
+void CanvasDock::dragLeaveEvent(QDragLeaveEvent *event)
+{
+	event->accept();
+}
+
+void CanvasDock::dragMoveEvent(QDragMoveEvent *event)
+{
+	event->acceptProposedAction();
+}
+
+#ifdef _WIN32
+static QString ReadWindowsURLFile(const QString &file)
+{
+	QSettings iniFile(file, QSettings::IniFormat);
+	QVariant url = iniFile.value("InternetShortcut/URL");
+	return url.toString();
+}
+#endif
+
+static const char *textExtensions[] = {"txt", "log", nullptr};
+
+static const char *imageExtensions[] = {"bmp", "gif", "jpeg", "jpg",
+#ifdef _WIN32
+					"jxr",
+#endif
+					"png", "tga", "webp", nullptr};
+
+static const char *htmlExtensions[] = {"htm", "html", nullptr};
+
+static const char *mediaExtensions[] = {
+	"3ga",   "669",  "a52",  "aac",  "ac3",  "adt", "adts", "aif", "aifc", "aiff", "amb",  "amr", "aob",  "ape",   "au",
+	"awb",   "caf",  "dts",  "flac", "it",   "kar", "m4a",  "m4b", "m4p",  "m5p",  "mid",  "mka", "mlp",  "mod",   "mpa",
+	"mp1",   "mp2",  "mp3",  "mpc",  "mpga", "mus", "oga",  "ogg", "oma",  "opus", "qcp",  "ra",  "rmi",  "s3m",   "sid",
+	"spx",   "tak",  "thd",  "tta",  "voc",  "vqf", "w64",  "wav", "wma",  "wv",   "xa",   "xm",  "3g2",  "3gp",   "3gp2",
+	"3gpp",  "amv",  "asf",  "avi",  "bik",  "crf", "divx", "drc", "dv",   "evo",  "f4v",  "flv", "gvi",  "gxf",   "iso",
+	"m1v",   "m2v",  "m2t",  "m2ts", "m4v",  "mkv", "mov",  "mp2", "mp2v", "mp4",  "mp4v", "mpe", "mpeg", "mpeg1", "mpeg2",
+	"mpeg4", "mpg",  "mpv2", "mts",  "mtv",  "mxf", "mxg",  "nsv", "nuv",  "ogg",  "ogm",  "ogv", "ogx",  "ps",    "rec",
+	"rm",    "rmvb", "rpl",  "thp",  "tod",  "ts",  "tts",  "txd", "vob",  "vro",  "webm", "wm",  "wmv",  "wtv",   nullptr};
+
+void CanvasDock::dropEvent(QDropEvent *event)
+{
+	const QMimeData *mimeData = event->mimeData();
+
+	if (mimeData->hasUrls()) {
+		QList<QUrl> urls = mimeData->urls();
+
+		for (int i = 0; i < urls.size(); i++) {
+			QUrl url = urls[i];
+			QString file = url.toLocalFile();
+			QFileInfo fileInfo(file);
+
+			if (!fileInfo.exists()) {
+				ConfirmDropUrl(url.url());
+				continue;
+			}
+
+#ifdef _WIN32
+			if (fileInfo.suffix().compare("url", Qt::CaseInsensitive) == 0) {
+				QString urlTarget = ReadWindowsURLFile(file);
+				if (!urlTarget.isEmpty()) {
+					ConfirmDropUrl(urlTarget);
+				}
+				continue;
+			} else if (fileInfo.isShortcut()) {
+				file = fileInfo.symLinkTarget();
+				fileInfo = QFileInfo(file);
+				if (!fileInfo.exists()) {
+					continue;
+				}
+			}
+#endif
+
+			QString suffixQStr = fileInfo.suffix();
+			QByteArray suffixArray = suffixQStr.toUtf8();
+			const char *suffix = suffixArray.constData();
+			bool found = false;
+
+			const char **cmp;
+			cmp = textExtensions;
+			while (*cmp) {
+				if (astrcmpi(*cmp, suffix) == 0) {
+					OBSDataAutoRelease s = obs_data_create();
+#ifdef _WIN32
+					obs_data_set_bool(s, "read_from_file", true);
+					obs_data_set_string(s, "file", file.toUtf8().constData());
+					AddDropSource(s, "text_gdiplus", QUrl::fromLocalFile(file).fileName());
+#else
+					obs_data_set_bool(s, "from_file", true);
+					obs_data_set_string(s, "text_file", file.toUtf8().constData());
+					AddDropSource(s, "text_ft2_source", QUrl::fromLocalFile(file).fileName());
+#endif
+					found = true;
+					break;
+				}
+
+				cmp++;
+			}
+
+			if (found) {
+				continue;
+			}
+
+			cmp = htmlExtensions;
+			while (*cmp) {
+				if (astrcmpi(*cmp, suffix) == 0) {
+					OBSDataAutoRelease s = obs_data_create();
+					obs_data_set_bool(s, "is_local_file", true);
+					obs_data_set_string(s, "local_file", file.toUtf8().constData());
+					obs_data_set_int(s, "width", canvas_width);
+					obs_data_set_int(s, "height", canvas_height);
+					AddDropSource(s, "browser_source", QUrl::fromLocalFile(file).fileName());
+					found = true;
+					break;
+				}
+
+				cmp++;
+			}
+
+			if (found) {
+				continue;
+			}
+
+			cmp = imageExtensions;
+			while (*cmp) {
+				if (astrcmpi(*cmp, suffix) == 0) {
+					OBSDataAutoRelease s = obs_data_create();
+					obs_data_set_string(s, "file", file.toUtf8().constData());
+					AddDropSource(s, "image_source", QUrl::fromLocalFile(file).fileName());
+					found = true;
+					break;
+				}
+
+				cmp++;
+			}
+
+			if (found) {
+				continue;
+			}
+
+			cmp = mediaExtensions;
+			while (*cmp) {
+				if (astrcmpi(*cmp, suffix) == 0) {
+					OBSDataAutoRelease s = obs_data_create();
+					obs_data_set_string(s, "local_file", file.toUtf8().constData());
+					AddDropSource(s, "ffmpeg_source", QUrl::fromLocalFile(file).fileName());
+					found = true;
+					break;
+				}
+
+				cmp++;
+			}
+
+			if (found) {
+				continue;
+			}
+		}
+	} else if (mimeData->hasText()) {
+		OBSDataAutoRelease s = obs_data_create();
+		obs_data_set_string(settings, "text", mimeData->text().toUtf8().constData());
+#ifdef _WIN32
+		AddDropSource(s, "text_gdiplus");
+#else
+		AddDropSource(s, "text_ft2_source");
+#endif
+	} else if (event->mimeData()->hasFormat("application/x-obs-source-uuid")) {
+		QString uuid = QString::fromUtf8(event->mimeData()->data("application/x-obs-source-uuid"));
+
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toStdString().c_str());
+		if (source && scene) {
+			obs_scene_add(scene, source);
+		}
+		event->acceptProposedAction();
+	}
+}
+
+void CanvasDock::ConfirmDropUrl(const QString &url)
+{
+	if (url.left(7).compare("http://", Qt::CaseInsensitive) != 0 && url.left(8).compare("https://", Qt::CaseInsensitive) != 0) {
+		return;
+	}
+
+	activateWindow();
+
+	QString msg = QString::fromUtf8(obs_frontend_get_locale_string("AddUrl.Text"));
+	msg += "\n\n";
+	msg += QString::fromUtf8(obs_frontend_get_locale_string("AddUrl.Text.Url")).arg(url);
+
+	QMessageBox messageBox(this);
+	messageBox.setWindowTitle(QString::fromUtf8(obs_frontend_get_locale_string("AddUrl.Title")));
+	messageBox.setText(msg);
+
+	QPushButton *yesButton =
+		messageBox.addButton(QString::fromUtf8(obs_frontend_get_locale_string("Yes")), QMessageBox::YesRole);
+	QPushButton *noButton = messageBox.addButton(QString::fromUtf8(obs_frontend_get_locale_string("No")), QMessageBox::NoRole);
+	messageBox.setDefaultButton(yesButton);
+	messageBox.setEscapeButton(noButton);
+	messageBox.setIcon(QMessageBox::Question);
+	messageBox.exec();
+
+	if (messageBox.clickedButton() == yesButton) {
+		AddDropURL(QUrl(url));
+	}
+}
+
+void CanvasDock::AddDropSource(obs_data_t *data, const char *type, const QString &name)
+{
+	type = obs_get_latest_input_type_id(type);
+	if (type == nullptr || !obs_source_get_display_name(type)) {
+		return;
+	}
+	std::string baseName = name.toStdString();
+	if (baseName.empty()) {
+		baseName = obs_source_get_display_name(type);
+	}
+
+	std::string sourceName = baseName;
+	OBSSourceAutoRelease s = nullptr;
+	obs_source_t *created_source = nullptr;
+	int i = 2;
+	if (obs_get_source_output_flags(type) & OBS_SOURCE_REQUIRES_CANVAS) {
+		while ((s = obs_canvas_get_source_by_name(canvas, sourceName.c_str()))) {
+			sourceName = baseName + " (" + std::to_string(i++) + ")";
+		}
+		created_source = obs_scene_get_source(obs_canvas_scene_create(canvas, sourceName.c_str()));
+	} else {
+		while ((s = obs_get_source_by_name(sourceName.c_str()))) {
+			sourceName = baseName + " (" + std::to_string(i++) + ")";
+		}
+		created_source = obs_source_create(type, sourceName.c_str(), data, nullptr);
+	}
+	if (scene && created_source) {
+		obs_scene_add(scene, created_source);
+	}
+	obs_source_release(created_source);
+}
+
+void CanvasDock::AddDropURL(QUrl url)
+{
+	OBSDataAutoRelease s = obs_data_create();
+	QUrlQuery query = QUrlQuery(url.query(QUrl::FullyEncoded));
+
+	int cx = canvas_width;
+	int cy = canvas_height;
+
+	if (query.hasQueryItem("layer-width")) {
+		cx = query.queryItemValue("layer-width").toInt();
+	}
+	if (query.hasQueryItem("layer-height")) {
+		cy = query.queryItemValue("layer-height").toInt();
+	}
+	if (query.hasQueryItem("layer-css")) {
+		// QUrl::FullyDecoded does NOT properly decode a
+		// application/x-www-form-urlencoded space represented as '+'
+		// Thus, this is manually filtered out before QUrl's
+		// decoding kicks in again. This is to allow JavaScript's
+		// default searchParams.append function to simply append css
+		// to the query parameters, which is the intended usecase for this.
+		QString fullyEncoded = query.queryItemValue("layer-css", QUrl::FullyEncoded);
+		fullyEncoded = fullyEncoded.replace("+", "%20");
+		QString decoded = QUrl::fromPercentEncoding(QByteArray::fromStdString(fullyEncoded.toUtf8().constData()));
+		obs_data_set_string(s, "css", decoded.toUtf8().constData());
+	}
+
+	obs_data_set_int(s, "width", cx);
+	obs_data_set_int(s, "height", cy);
+
+	QString name = query.hasQueryItem("layer-name") ? query.queryItemValue("layer-name", QUrl::FullyDecoded) : url.host();
+
+	query.removeQueryItem("layer-width");
+	query.removeQueryItem("layer-height");
+	query.removeQueryItem("layer-name");
+	query.removeQueryItem("layer-css");
+	url.setQuery(query);
+
+	obs_data_set_string(s, "url", url.url().toUtf8().constData());
+	AddDropSource(s, "browser_source", name);
 }
