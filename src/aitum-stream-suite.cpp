@@ -324,6 +324,57 @@ void save_dock_state(QString mode)
 	}
 }
 
+void fill_central_widget()
+{
+	auto main_window = static_cast<QMainWindow *>(obs_frontend_get_main_window());
+	if (!main_window) {
+		return;
+	}
+	auto cw = main_window->centralWidget();
+	if (!cw || cw->height() <= 10 || cw->width() <= 10) {
+		return;
+	}
+	auto dock_to_size = main_window->findChild<QDockWidget *>(QStringLiteral("AitumStreamSuiteMainCanvas"));
+	if (!dock_to_size) {
+		dock_to_size = main_window->findChild<QDockWidget *>(QStringLiteral("previewDock"));
+	}
+	if (!dock_to_size) {
+		auto all_docks = main_window->findChildren<QDockWidget *>();
+		QList<QDockWidget *> visible_docks;
+		QList<QDockWidget *> horizontal_docks;
+		QList<QDockWidget *> vertical_docks;
+		for (auto &dock : all_docks) {
+			if (dock->isVisible()) {
+				auto area = main_window->dockWidgetArea(dock);
+				visible_docks.append(dock);
+				if (area == Qt::TopDockWidgetArea || area == Qt::BottomDockWidgetArea) {
+					vertical_docks.append(dock);
+				} else if (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea) {
+					horizontal_docks.append(dock);
+				}
+			}
+		}
+		if (visible_docks.count() == 1) {
+			dock_to_size = visible_docks.first();
+		} else if (cw->height() > cw->width() && !vertical_docks.isEmpty()) {
+			dock_to_size = vertical_docks.first();
+		} else if (cw->height() < cw->width() && !horizontal_docks.isEmpty()) {
+			dock_to_size = horizontal_docks.first();
+		} else if (!visible_docks.isEmpty()) {
+			dock_to_size = visible_docks.first();
+		}
+	}
+	if (!dock_to_size) {
+		return;
+	}
+	auto area = main_window->dockWidgetArea(dock_to_size);
+	if (area == Qt::TopDockWidgetArea || area == Qt::BottomDockWidgetArea) {
+		main_window->resizeDocks({dock_to_size}, {dock_to_size->height() + cw->height()}, Qt::Vertical);
+	} else if (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea) {
+		main_window->resizeDocks({dock_to_size}, {dock_to_size->width() + cw->width()}, Qt::Horizontal);
+	}
+}
+
 void reset_dock_corners()
 {
 	auto uc = obs_frontend_get_user_config();
@@ -447,21 +498,7 @@ void reset_live_dock_state()
 
 	main_window->resizeDocks(right_docks, right_dock_sizes, Qt::Vertical);
 
-	auto cw = main_window->centralWidget();
-	if (cw && cw->height() > 10 && cw->width() > 10) {
-		auto mcd = main_window->findChild<QDockWidget *>(QStringLiteral("AitumStreamSuiteMainCanvas"));
-		if (!mcd) {
-			mcd = main_window->findChild<QDockWidget *>(QStringLiteral("previewDock"));
-		}
-		if (mcd) {
-			auto area = main_window->dockWidgetArea(mcd);
-			if (area == Qt::TopDockWidgetArea || area == Qt::BottomDockWidgetArea) {
-				main_window->resizeDocks({mcd}, {mcd->height() + cw->height()}, Qt::Vertical);
-			} else if (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea) {
-				main_window->resizeDocks({mcd}, {mcd->width() + cw->width()}, Qt::Horizontal);
-			}
-		}
-	}
+	fill_central_widget();
 	save_dock_state(QString::fromStdString("Live"));
 }
 
@@ -555,15 +592,7 @@ void reset_build_dock_state()
 		top_docks.append(mcd);
 	}
 
-	auto cw = main_window->centralWidget();
-	if (mcd && cw && cw->height() > 10 && cw->width() > 10) {
-		auto area = main_window->dockWidgetArea(mcd);
-		if (area == Qt::TopDockWidgetArea || area == Qt::BottomDockWidgetArea) {
-			main_window->resizeDocks({mcd}, {mcd->height() + cw->height()}, Qt::Vertical);
-		} else if (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea) {
-			main_window->resizeDocks({mcd}, {mcd->width() + cw->width()}, Qt::Horizontal);
-		}
-	}
+	fill_central_widget();
 
 	save_dock_state(QString::fromStdString("Build"));
 }
@@ -874,6 +903,8 @@ void load_dock_state(QString mode)
 				}
 			},
 			Qt::QueuedConnection);
+	} else {
+		QMetaObject::invokeMethod(main_window, [main_window] { fill_central_widget(); }, Qt::QueuedConnection);
 	}
 }
 
@@ -2179,10 +2210,12 @@ bool obs_module_load(void)
 	auto cw = main_window->centralWidget();
 	if (cw && cw->objectName() == "centralwidget" && cw->findChild<QWidget *>("canvasEditor") != nullptr) {
 		obs_frontend_add_dock_by_id("AitumStreamSuiteMainCanvas", obs_module_text("AitumStreamSuiteMainCanvas"), cw);
-		cw = new QWidget();
-		cw->setContentsMargins(0, 0, 0, 0);
-		cw->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-		main_window->setCentralWidget(cw);
+		auto l = new QLabel(QString::fromUtf8(obs_module_text("ResizeDocks")), main_window);
+		l->setAlignment(Qt::AlignCenter);
+		l->setContentsMargins(0, 0, 0, 0);
+		l->setMinimumSize(0, 0);
+		l->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+		main_window->setCentralWidget(l);
 	}
 
 	output_dock = new OutputDock(main_window);

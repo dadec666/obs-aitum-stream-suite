@@ -506,6 +506,8 @@ void vendor_request_dock_show(obs_data_t *request_data, obs_data_t *response_dat
 	obs_data_set_bool(response_data, "success", false);
 }
 
+void fill_central_widget();
+
 void vendor_request_dock_hide(obs_data_t *request_data, obs_data_t *response_data, void *)
 {
 	const char *dock_name = obs_data_get_string(request_data, "dock");
@@ -524,7 +526,11 @@ void vendor_request_dock_hide(obs_data_t *request_data, obs_data_t *response_dat
 	auto docks = main_window->findChildren<QDockWidget *>();
 	for (auto &dock : docks) {
 		if (dock->objectName() == dn) {
-			QMetaObject::invokeMethod(dock, "hide");
+			QMetaObject::invokeMethod(dock, [dock] {
+				dock->hide();
+				fill_central_widget();
+			});
+
 			obs_data_set_bool(response_data, "success", true);
 			return;
 		}
