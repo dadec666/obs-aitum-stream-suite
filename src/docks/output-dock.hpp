@@ -17,6 +17,7 @@ private:
 	int outputPlatformIconSize = 36;
 	QVBoxLayout *mainLayout = nullptr;
 	QLabel *mainPlatformIconLabel = nullptr;
+	QLabel *mainStreamCanvasLabel = nullptr;
 	QPushButton *mainStreamButton = nullptr;
 	QPushButton *mainRecordButton = nullptr;
 	QPushButton *mainBacktrackCheckboxButton = nullptr;

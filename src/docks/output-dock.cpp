@@ -141,7 +141,8 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 
 	l2->addWidget(mainPlatformIconLabel);
 	l2->addWidget(new QLabel(QString::fromUtf8(obs_module_text("BuiltinStream"))), 1);
-	l2->addWidget(new QLabel(QString::fromUtf8(obs_module_text("MainCanvas"))), 1);
+	mainStreamCanvasLabel = new QLabel(QString::fromUtf8(obs_module_text("MainCanvas")));
+	l2->addWidget(mainStreamCanvasLabel, 1);
 	mainStreamButton = new QPushButton;
 	mainStreamButton->setObjectName(QStringLiteral("canvasStream"));
 	mainStreamButton->setMinimumHeight(30);
@@ -160,8 +161,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 					this, QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStop.Title")),
 					QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStop.Text")),
 					QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-				if (button == QMessageBox::No)
+				if (button == QMessageBox::No) {
 					stop = false;
+				}
 			}
 			if (stop) {
 				obs_frontend_streaming_stop();
@@ -256,14 +258,17 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 
 	connect(mainBacktrackCheckboxButton, &QPushButton::clicked, [this] {
 		bool enabled = mainBacktrackCheckboxButton->isChecked();
-		if (enabled != mainBacktrackCheckbox->isChecked())
+		if (enabled != mainBacktrackCheckbox->isChecked()) {
 			mainBacktrackCheckbox->setChecked(enabled);
-		if (enabled != mainBacktrackButton->isChecked())
+		}
+		if (enabled != mainBacktrackButton->isChecked()) {
 			mainBacktrackButton->setChecked(enabled);
-		if (enabled)
+		}
+		if (enabled) {
 			obs_frontend_replay_buffer_start();
-		else
+		} else {
 			obs_frontend_replay_buffer_stop();
+		}
 	});
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	connect(mainBacktrackCheckbox, &QCheckBox::checkStateChanged, [this] {
@@ -316,8 +321,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 	mainLayout->addWidget(mainVirtualCamGroup);
 
 	connect(&videoCheckTimer, &QTimer::timeout, [this] {
-		if (exiting)
+		if (exiting) {
 			return;
+		}
 
 		if (mainPlatformIconLabel) {
 			auto service = obs_frontend_get_streaming_service();
@@ -334,8 +340,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 			auto active = obs_frontend_streaming_active();
 			if (mainStreamButton->isChecked() != active) {
 				mainStreamButton->setChecked(active);
-				if (!active)
+				if (!active) {
 					mainStreamButton->setText("");
+				}
 			} else if (active) {
 				auto t = QTime::fromMSecsSinceStartOfDay(mainStreamStartTime.msecsTo(QDateTime::currentDateTime()));
 				mainStreamButton->setText(t.toString(t.hour() ? "hh:mm:ss" : "mm:ss"));
@@ -346,8 +353,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 			auto active = obs_frontend_recording_active();
 			if (mainRecordButton->isChecked() != active) {
 				mainRecordButton->setChecked(active);
-				if (!active)
+				if (!active) {
 					mainRecordButton->setText("");
+				}
 			} else if (active) {
 				auto t = QTime::fromMSecsSinceStartOfDay(mainRecordStartTime.msecsTo(QDateTime::currentDateTime()));
 				mainRecordButton->setText(t.toString(t.hour() ? "hh:mm:ss" : "mm:ss"));
@@ -358,8 +366,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 			auto enabled = obs_frontend_replay_buffer_active();
 			if (mainBacktrackCheckboxButton->isChecked() != enabled) {
 				mainBacktrackCheckboxButton->setChecked(enabled);
-				if (!enabled)
+				if (!enabled) {
 					mainBacktrackButton->setText("");
+				}
 			} else if (enabled) {
 				auto t = QTime::fromMSecsSinceStartOfDay(
 					mainBacktrackStartTime.msecsTo(QDateTime::currentDateTime()));
@@ -377,8 +386,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 			auto active = obs_frontend_virtualcam_active();
 			if (mainVirtualCamButton->isChecked() != active) {
 				mainVirtualCamButton->setChecked(active);
-				if (!active)
+				if (!active) {
 					mainVirtualCamButton->setText("");
+				}
 			} else if (active) {
 				auto t = QTime::fromMSecsSinceStartOfDay(
 					mainVirtualCamStartTime.msecsTo(QDateTime::currentDateTime()));
@@ -399,8 +409,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 		[](void *data, obs_hotkey_pair_id id, obs_hotkey_t *hotkey, bool pressed) {
 			UNUSED_PARAMETER(id);
 			UNUSED_PARAMETER(hotkey);
-			if (!pressed)
+			if (!pressed) {
 				return false;
+			}
 			auto dock = static_cast<OutputDock *>(data);
 			QMetaObject::invokeMethod(dock, [dock] { dock->StartAll(false, false); });
 			return true;
@@ -408,8 +419,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 		[](void *data, obs_hotkey_pair_id id, obs_hotkey_t *hotkey, bool pressed) {
 			UNUSED_PARAMETER(id);
 			UNUSED_PARAMETER(hotkey);
-			if (!pressed)
+			if (!pressed) {
 				return false;
+			}
 			auto dock = static_cast<OutputDock *>(data);
 			QMetaObject::invokeMethod(dock, [dock] { dock->StopAll(false, false); });
 			return true;
@@ -421,8 +433,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 		[](void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
 			UNUSED_PARAMETER(id);
 			UNUSED_PARAMETER(hotkey);
-			if (!pressed)
+			if (!pressed) {
 				return;
+			}
 			auto dock = static_cast<OutputDock *>(data);
 			QMetaObject::invokeMethod(dock, [dock] { dock->StartAll(true, false); });
 		},
@@ -433,8 +446,9 @@ OutputDock::OutputDock(QWidget *parent) : QFrame(parent)
 		[](void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
 			UNUSED_PARAMETER(id);
 			UNUSED_PARAMETER(hotkey);
-			if (!pressed)
+			if (!pressed) {
 				return;
+			}
 			auto dock = static_cast<OutputDock *>(data);
 			QMetaObject::invokeMethod(dock, [dock] { dock->StartAll(false, true); });
 		},
@@ -446,12 +460,15 @@ void RemoveWidget(QWidget *widget);
 
 OutputDock::~OutputDock()
 {
-	if (StartStopHotkey != OBS_INVALID_HOTKEY_PAIR_ID)
+	if (StartStopHotkey != OBS_INVALID_HOTKEY_PAIR_ID) {
 		obs_hotkey_pair_unregister(StartStopHotkey);
-	if (StartStreamHotkey != OBS_INVALID_HOTKEY_ID)
+	}
+	if (StartStreamHotkey != OBS_INVALID_HOTKEY_ID) {
 		obs_hotkey_unregister(StartStreamHotkey);
-	if (StartRecordHotkey != OBS_INVALID_HOTKEY_ID)
+	}
+	if (StartRecordHotkey != OBS_INVALID_HOTKEY_ID) {
 		obs_hotkey_unregister(StartRecordHotkey);
+	}
 	obs_frontend_add_event_callback(frontend_event, this);
 	videoCheckTimer.stop();
 	for (auto it = outputWidgets.begin(); it != outputWidgets.end(); it++) {
@@ -577,30 +594,60 @@ void OutputDock::UpdateMainStreamStatus(bool active)
 		mainStreamButton->setText("");
 		return;
 	}
-	if (!current_profile_config)
+	if (!current_profile_config) {
 		return;
+	}
+
+	std::map<video_t *, std::string> canvasNames;
+	obs_enum_canvases(
+		[](void *data, obs_canvas_t *c) {
+			auto v = obs_canvas_get_video(c);
+			if (!v) {
+				return true;
+			}
+			auto cns = static_cast<std::map<video_t *, std::string> *>(data);
+			(*cns)[obs_canvas_get_video(c)] = obs_canvas_get_name(c);
+			return true;
+		},
+		&canvasNames);
+
 	struct obs_video_info ovi = {0};
 	obs_get_video_info(&ovi);
 	double fps = ovi.fps_den > 0 ? (double)ovi.fps_num / (double)ovi.fps_den : 0.0;
 	auto output = obs_frontend_get_streaming_output();
+	QStringList canvasNamesList;
 	bool found = false;
 	for (auto i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 		auto encoder = obs_output_get_video_encoder2(output, i);
 		QString settingName = QString::fromUtf8("video_encoder_description") + QString::number(i);
 		if (encoder) {
 			found = true;
-			auto mainEncoderDescription = QString::number(obs_encoder_get_width(encoder)) + "x" +
-						      QString::number(obs_encoder_get_height(encoder));
+
+			QString mainEncoderDescription;
+			auto v = obs_encoder_parent_video(encoder);
+			auto f = canvasNames.find(v);
+			if (f != canvasNames.end()) {
+				mainEncoderDescription = QString::fromUtf8(f->second.c_str());
+				if (!canvasNamesList.contains(mainEncoderDescription)) {
+					canvasNamesList.push_back(mainEncoderDescription);
+				}
+			}
+			if (!mainEncoderDescription.isEmpty()) {
+				mainEncoderDescription += QString::fromUtf8(" ");
+			}
+			mainEncoderDescription += QString::number(obs_encoder_get_width(encoder)) + "x" + QString::number(obs_encoder_get_height(encoder));
 			auto divisor = obs_encoder_get_frame_rate_divisor(encoder);
-			if (divisor > 0)
+			if (divisor > 0) {
 				mainEncoderDescription +=
 					QString::fromUtf8(" ") + QString::number(fps / divisor, 'g', 4) + QString::fromUtf8("fps");
+			}
 
 			auto settings = obs_encoder_get_settings(encoder);
 			auto bitrate = settings ? obs_data_get_int(settings, "bitrate") : 0;
-			if (bitrate > 0)
+			if (bitrate > 0) {
 				mainEncoderDescription +=
 					QString::fromUtf8(" ") + QString::number(bitrate) + QString::fromUtf8("Kbps");
+			}
 			obs_data_release(settings);
 
 			obs_data_set_string(current_profile_config, settingName.toUtf8().constData(),
@@ -611,6 +658,11 @@ void OutputDock::UpdateMainStreamStatus(bool active)
 		}
 	}
 	obs_output_release(output);
+	if (canvasNamesList.count() > 1) {
+		mainStreamCanvasLabel->setText(canvasNamesList.join(", "));
+	} else {
+		mainStreamCanvasLabel->setText(QString::fromUtf8(obs_module_text("MainCanvas")));
+	}
 }
 
 void OutputDock::UpdateMainRecordingStatus(bool active)
@@ -675,10 +727,12 @@ bool OutputDock::AddChapterToOutput(const char *output_name, const char *chapter
 
 void OutputDock::StartNextOutput()
 {
-	if (outputsToStart.empty())
+	if (outputsToStart.empty()) {
 		return;
-	if (outputStarting >= outputsToStart.size())
+	}
+	if (outputStarting >= outputsToStart.size()) {
 		outputStarting = 0;
+	}
 	auto startedAt = outputStarting;
 	while (true) {
 		auto action = std::next(outputsToStart.begin(), outputStarting);
@@ -702,8 +756,9 @@ void OutputDock::StartNextOutput()
 void OutputDock::frontend_event(enum obs_frontend_event event, void *private_data)
 {
 	auto dock = static_cast<OutputDock *>(private_data);
-	if (!dock)
+	if (!dock) {
 		return;
+	}
 	switch (event) {
 	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
 		if (dock->mainStreamOnStarted) {
@@ -777,8 +832,9 @@ void OutputDock::StartAll(bool streamOnly, bool recordOnly)
 							    QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStart.Title")),
 							    QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStart.Text")),
 							    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
 				return;
+			}
 		}
 
 		outputsToStart.push_back([this](std::function<void()> onStarted) {
@@ -850,14 +906,17 @@ void OutputDock::StartAll(bool streamOnly, bool recordOnly)
 		});
 	}
 	for (auto &ow : outputWidgets) {
-		if (streamOnly && !ow->IsStream())
+		if (streamOnly && !ow->IsStream()) {
 			continue;
-		if (recordOnly && !ow->IsRecord())
+		}
+		if (recordOnly && !ow->IsRecord()) {
 			continue;
+		}
 		outputsToStart.push_back([this, ow](std::function<void()> onStarted) { return ow->StartOutput(onStarted); });
 	}
-	if (outputsToStart.empty())
+	if (outputsToStart.empty()) {
 		return;
+	}
 	blog(LOG_INFO, "[Aitum Stream Suite] Starting %zu outputs", outputsToStart.size());
 	StartNextOutput();
 }
@@ -871,30 +930,38 @@ void OutputDock::StopAll(bool streamOnly, bool recordOnly)
 		auto button = QMessageBox::question(this, QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStop.Title")),
 						    QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStop.Text")),
 						    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-		if (button == QMessageBox::No)
+		if (button == QMessageBox::No) {
 			return;
+		}
 	} else if (warnRecord && mainRecordEnabled && !streamOnly && obs_frontend_recording_active() && isVisible()) {
 		auto button = QMessageBox::question(this,
 						    QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStopRecord.Title")),
 						    QString::fromUtf8(obs_frontend_get_locale_string("ConfirmStopRecord.Text")),
 						    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-		if (button == QMessageBox::No)
+		if (button == QMessageBox::No) {
 			return;
+		}
 	}
 
-	if (mainStreamEnabled && !recordOnly && obs_frontend_streaming_active())
+	if (mainStreamEnabled && !recordOnly && obs_frontend_streaming_active()) {
 		obs_frontend_streaming_stop();
-	if (mainRecordEnabled && !streamOnly && obs_frontend_recording_active())
+	}
+	if (mainRecordEnabled && !streamOnly && obs_frontend_recording_active()) {
 		obs_frontend_recording_stop();
-	if (mainBacktrackEnabled && !streamOnly && obs_frontend_replay_buffer_active())
+	}
+	if (mainBacktrackEnabled && !streamOnly && obs_frontend_replay_buffer_active()) {
 		obs_frontend_replay_buffer_stop();
-	if (mainVirtualCamEnabled && !streamOnly && !recordOnly && obs_frontend_virtualcam_active())
+	}
+	if (mainVirtualCamEnabled && !streamOnly && !recordOnly && obs_frontend_virtualcam_active()) {
 		obs_frontend_stop_virtualcam();
+	}
 	for (auto &ow : outputWidgets) {
-		if (streamOnly && !ow->IsStream())
+		if (streamOnly && !ow->IsStream()) {
 			continue;
-		if (recordOnly && !ow->IsRecord())
+		}
+		if (recordOnly && !ow->IsRecord()) {
 			continue;
+		}
 		ow->StopOutput();
 	}
 }
