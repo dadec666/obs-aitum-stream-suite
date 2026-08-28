@@ -30,6 +30,7 @@ private slots:
 	void AddSourceFromAction();
 	void AddSourceToScene(OBSSource s);
 	void OpenSourceProjector();
+	void ColorChange();
 public:
 	SourcesDock(QWidget *parent = nullptr);
 	~SourcesDock();
