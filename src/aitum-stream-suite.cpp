@@ -250,24 +250,6 @@ bool version_info_downloaded(void *param, struct file_download_data *file)
 	}
 	obs_data_array_release(ea);
 
-	if (obs_data_get_bool(data_obj, "show_overlays")) {
-		for (int i = 0; i < modesTabBar->count(); ++i) {
-			if (modesTabBar->tabData(i) == QString::fromUtf8("Overlays")) {
-				modesTabBar->setTabVisible(i, true);
-
-				break;
-			}
-		}
-		QMetaObject::invokeMethod(toolbar, [] {
-			auto main_window = static_cast<QMainWindow *>(obs_frontend_get_main_window());
-			obs_frontend_add_dock_by_id("AitumStreamSuiteOverlays", obs_module_text("AitumStreamSuiteOverlays"),
-						    new BrowserDock("overlays", "https://chat.aitumsuite.tv/overlays",
-								    main_window));
-			obs_frontend_add_dock_by_id("AitumStreamSuiteSelect", obs_module_text("AitumStreamSuiteSelect"),
-						    new BrowserDock("select", "https://chat.aitumsuite.tv/select", main_window));
-		});
-	}
-
 	obs_data_release(data_obj);
 
 	if (version_download_info) {
@@ -1490,6 +1472,10 @@ void load_browser_panels()
 				    new BrowserDock("info", "https://chat.aitumsuite.tv/info", main_window));
 	obs_frontend_add_dock_by_id("AitumStreamSuitePortal", obs_module_text("AitumStreamSuitePortal"),
 				    new BrowserDock("portal", "https://chat.aitumsuite.tv/portal", main_window));
+	obs_frontend_add_dock_by_id("AitumStreamSuiteOverlays", obs_module_text("AitumStreamSuiteOverlays"),
+				    new BrowserDock("overlays", "https://chat.aitumsuite.tv/overlays", main_window));
+	obs_frontend_add_dock_by_id("AitumStreamSuiteSelect", obs_module_text("AitumStreamSuiteSelect"),
+				    new BrowserDock("select", "https://chat.aitumsuite.tv/overlays/select", main_window));
 }
 
 void unload_browser_panels()
@@ -1950,7 +1936,7 @@ bool obs_module_load(void)
 		auto index = modesTabBar->addTab(QString::fromUtf8(obs_module_text(std::get<0>(it).c_str())));
 		modesTabBar->setTabData(index, QString::fromUtf8(std::get<0>(it).c_str()));
 		modesTabBar->setTabIcon(index, generateEmojiQIcon(std::get<2>(it), modesTabBar->palette().color(QPalette::Text)));
-		modesTabBar->setTabVisible(index, !std::get<3>(it));
+		modesTabBar->setTabVisible(index, !std::get<3>(it) || QString::fromUtf8("Overlays") == modesTabBar->tabData(index));
 	}
 	toolbar->addWidget(modesTabBar);
 	auto addModeAction =
