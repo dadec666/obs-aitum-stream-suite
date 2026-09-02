@@ -313,7 +313,17 @@ void fill_central_widget()
 		return;
 	}
 	auto cw = main_window->centralWidget();
-	if (!cw || cw->height() <= 10 || cw->width() <= 10) {
+	if (!cw) {
+		return;
+	}
+	auto cw_height = cw->height();
+	auto cw_width = cw->width();
+	auto cw_pos = cw->pos();
+	if (cw_height <= 10 || cw_width <= 10) {
+		return;
+	}
+	if (cw_pos.x() <= -cw_width || cw_pos.y() <= -cw_height || cw_pos.x() > main_window->width() ||
+	    cw_pos.y() > main_window->height()) {
 		return;
 	}
 	auto dock_to_size = main_window->findChild<QDockWidget *>(QStringLiteral("AitumStreamSuiteMainCanvas"));
@@ -670,9 +680,20 @@ void reset_overlays_dock_state()
 		main_window,
 		[main_window, od] {
 			auto cw = main_window->centralWidget();
-			if (cw && cw->height() > 10 && cw->width() > 10) {
-				main_window->resizeDocks({od}, {main_window->height()}, Qt::Vertical);
+			if (!cw) {
+				return;
 			}
+			auto cw_height = cw->height();
+			auto cw_width = cw->width();
+			auto cw_pos = cw->pos();
+			if (cw_height <= 10 || cw_width <= 10) {
+				return;
+			}
+			if (cw_pos.x() <= -cw_width || cw_pos.y() <= -cw_height || cw_pos.x() > main_window->width() ||
+			    cw_pos.y() > main_window->height()) {
+				return;
+			}
+			main_window->resizeDocks({od}, {main_window->height()}, Qt::Vertical);
 		},
 		Qt::QueuedConnection);
 }
@@ -730,13 +751,25 @@ void reset_extensions_dock_state()
 		main_window,
 		[main_window, extension_docks] {
 			auto cw = main_window->centralWidget();
-			if (cw && cw->height() > 10 && cw->width() > 10) {
-				QList<int> extension_dock_sizes;
-				for (auto i = 0; i < extension_docks.count(); ++i) {
-					extension_dock_sizes.append(main_window->height());
-				}
-				main_window->resizeDocks(extension_docks, extension_dock_sizes, Qt::Vertical);
+			if (!cw) {
+				return;
 			}
+			auto cw_height = cw->height();
+			auto cw_width = cw->width();
+			auto cw_pos = cw->pos();
+			if (cw_height <= 10 || cw_width <= 10) {
+				return;
+			}
+			if (cw_pos.x() <= -cw_width || cw_pos.y() <= -cw_height || cw_pos.x() > main_window->width() ||
+			    cw_pos.y() > main_window->height()) {
+				return;
+			}
+
+			QList<int> extension_dock_sizes;
+			for (auto i = 0; i < extension_docks.count(); ++i) {
+				extension_dock_sizes.append(main_window->height());
+			}
+			main_window->resizeDocks(extension_docks, extension_dock_sizes, Qt::Vertical);
 		},
 		Qt::QueuedConnection);
 }
@@ -820,20 +853,34 @@ void load_dock_state(QString mode)
 				}
 			}
 
-			QMetaObject::invokeMethod(
-				main_window,
-				[main_window, d] {
-					auto cw = main_window->centralWidget();
-					if (cw && cw->height() > 10 && cw->width() > 10) {
+			if (finished_loading) {
+				QMetaObject::invokeMethod(
+					main_window,
+					[main_window, d] {
+						auto cw = main_window->centralWidget();
+						if (!cw) {
+							return;
+						}
+						auto cw_height = cw->height();
+						auto cw_width = cw->width();
+						auto cw_pos = cw->pos();
+						if (cw_height <= 10 || cw_width <= 10) {
+							return;
+						}
+						if (cw_pos.x() <= -cw_width || cw_pos.y() <= -cw_height ||
+						    cw_pos.x() > main_window->width() || cw_pos.y() > main_window->height()) {
+							return;
+						}
+
 						auto area = main_window->dockWidgetArea(d);
 						if (area == Qt::TopDockWidgetArea || area == Qt::BottomDockWidgetArea) {
-							main_window->resizeDocks({d}, {d->height() + cw->height()}, Qt::Vertical);
+							main_window->resizeDocks({d}, {d->height() + cw_height}, Qt::Vertical);
 						} else if (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea) {
-							main_window->resizeDocks({d}, {d->width() + cw->width()}, Qt::Horizontal);
+							main_window->resizeDocks({d}, {d->width() + cw_width}, Qt::Horizontal);
 						}
-					}
-				},
-				Qt::QueuedConnection);
+					},
+					Qt::QueuedConnection);
+			}
 		}
 
 		auto docks = main_window->findChildren<QDockWidget *>();
@@ -875,13 +922,25 @@ void load_dock_state(QString mode)
 			main_window,
 			[main_window, fd] {
 				auto cw = main_window->centralWidget();
-				if (cw && cw->height() > 10 && cw->width() > 10) {
-					auto area = main_window->dockWidgetArea(fd);
-					if (area == Qt::TopDockWidgetArea || area == Qt::BottomDockWidgetArea) {
-						main_window->resizeDocks({fd}, {fd->height() + cw->height()}, Qt::Vertical);
-					} else if (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea) {
-						main_window->resizeDocks({fd}, {fd->width() + cw->width()}, Qt::Horizontal);
-					}
+				if (!cw) {
+					return;
+				}
+				auto cw_height = cw->height();
+				auto cw_width = cw->width();
+				auto cw_pos = cw->pos();
+				if (cw_height <= 10 || cw_width <= 10) {
+					return;
+				}
+				if (cw_pos.x() <= -cw_width || cw_pos.y() <= -cw_height || cw_pos.x() > main_window->width() ||
+				    cw_pos.y() > main_window->height()) {
+					return;
+				}
+
+				auto area = main_window->dockWidgetArea(fd);
+				if (area == Qt::TopDockWidgetArea || area == Qt::BottomDockWidgetArea) {
+					main_window->resizeDocks({fd}, {fd->height() + cw_height}, Qt::Vertical);
+				} else if (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea) {
+					main_window->resizeDocks({fd}, {fd->width() + cw_width}, Qt::Horizontal);
 				}
 			},
 			Qt::QueuedConnection);
@@ -2283,7 +2342,9 @@ void TabToolBar::resizeEvent(QResizeEvent *event)
 			}
 		}
 		if (current_docks == loaded_docks) {
-			load_dock_state_timer.start();
+			if (finished_loading) {
+				load_dock_state_timer.start();
+			}
 		} else if (main_window->isVisible() && current_profile_config &&
 			   !obs_data_get_bool(current_profile_config, "dock_mode_manual_save")) {
 			auto index = modesTabBar->currentIndex();
